@@ -27,7 +27,10 @@ jobs:
           qa_home="$RUNNER_TEMP/clashctl-desktop-home"
           mkdir -p "$qa_home"
           export HOME="$qa_home" XDG_DATA_HOME="$qa_home/.local/share" XDG_CONFIG_HOME="$qa_home/.config"
-          bash install.sh --no-launch --service nohup > "$RUNNER_TEMP/install.log" 2>&1
+          if ! bash install.sh --no-launch --service nohup > "$RUNNER_TEMP/install.log" 2>&1; then
+            sed -E '/secret|password|token|密钥|密码/Id' "$RUNNER_TEMP/install.log" | tail -100
+            exit 1
+          fi
           "$HOME/.local/bin/clashctl-ui" --doctor
           echo "CLASHCTL_TEST_HOME=$HOME/.clashctl" >> "$GITHUB_ENV"
       - name: Run backend and installer tests

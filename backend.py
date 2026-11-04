@@ -480,4 +480,3 @@ class Handler(BaseHTTPRequestHandler):
             self.send({'error': '无法读写本地配置或启动命令，请检查文件权限'}, 500)
         except Exception:
             self.send({'error': '操作失败，请检查 clashctl 日志'}, 500)
-
