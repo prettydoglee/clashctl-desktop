@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="连接本地 clashctl 的代理控制台">
+  <title>Clashctl · 本地代理控制台</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#dashboard"><img src="/icon.svg" alt="" width="39" height="39"><span>Clashctl<small>本地代理控制台</small></span></a>
+    <div class="nav-label">工作空间</div>
+    <nav aria-label="主导航">
+      <button data-page="dashboard" class="nav-item active"><span data-icon="dashboard"></span><span>仪表盘</span></button>
+      <button data-page="proxies" class="nav-item"><span data-icon="globe"></span><span>代理节点</span><span class="nav-count" id="node-count">—</span></button>
+      <button data-page="profiles" class="nav-item"><span data-icon="file"></span><span>订阅配置</span></button>
+      <button data-page="connections" class="nav-item"><span data-icon="network"></span><span>实时连接</span><span class="nav-dot"></span></button>
+      <button data-page="rules" class="nav-item"><span data-icon="route"></span><span>路由规则</span></button>
+      <button data-page="logs" class="nav-item"><span data-icon="terminal"></span><span>运行日志</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button data-page="settings" class="nav-item"><span data-icon="settings"></span><span>设置</span></button>
+      <div class="core-status"><i id="sidebar-status"></i><div>Mihomo Core<small id="sidebar-version">正在连接…</small></div><span data-icon="shield"></span></div>
+    </div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <div><div class="eyebrow">CLASHCTL / <span id="breadcrumb">OVERVIEW</span></div><h1 id="page-title">仪表盘</h1></div>
+      <div class="header-actions"><span class="local-badge"><i></i>本地连接</span><button class="icon-button" id="refresh" title="刷新数据" aria-label="刷新数据"><span data-icon="refresh"></span></button><button class="icon-button" id="theme" title="切换深浅色" aria-label="切换深浅色"><span data-icon="moon"></span></button></div>
+    </header>
+    <div id="error-banner" class="banner hidden" role="alert"></div>
+    <div id="setup-banner" class="setup-banner hidden"><div><strong>添加订阅，开始使用</strong><p>导入你自己的 Clash / Mihomo 订阅链接，首次添加后会自动启用。</p></div><button id="setup-add-profile" class="primary-button">添加订阅</button></div>
+    <section id="dashboard" class="page">
+      <div class="section-intro"><p>你的网络，一目了然。</p><span id="updated-at">正在读取本地数据</span></div>
+      <div class="dashboard-grid">
+        <article class="card status-card">
+          <div class="status-content"><div class="card-label"><span data-icon="activity"></span>运行状态 <span id="run-badge" class="pill neutral">连接中</span></div><h2 id="status-heading">正在连接内核</h2><div class="status-detail" id="active-node">读取当前出站节点…</div><div class="status-meta"><div><span>内核版本</span><strong id="core-version">—</strong></div><div><span>当前订阅</span><strong id="current-profile">—</strong></div></div></div>
+          <div class="power-area"><div class="power-orbit"></div><button id="power" class="power-button" title="启动或停止代理内核" aria-label="启动或停止代理内核"><span data-icon="power"></span></button><span class="power-hint" id="power-hint">连接中</span></div>
+        </article>
+        <article class="card traffic-card"><div class="card-label"><span class="blue" data-icon="down"></span>下载速度</div><div class="speed"><strong id="download-speed">0</strong><span id="download-unit">B/s</span></div><div class="traffic-total">累计下载 <span id="download-total">0 B</span></div><svg class="sparkline" id="down-chart" viewBox="0 0 300 65" preserveAspectRatio="none" aria-label="最近一分钟下载速度"><path class="chart-fill"/><path class="chart-line"/></svg></article>
+        <article class="card traffic-card"><div class="card-label"><span class="muted" data-icon="up"></span>上传速度</div><div class="speed"><strong id="upload-speed">0</strong><span id="upload-unit">B/s</span></div><div class="traffic-total">累计上传 <span id="upload-total">0 B</span></div><svg class="sparkline upload" id="up-chart" viewBox="0 0 300 65" preserveAspectRatio="none" aria-label="最近一分钟上传速度"><path class="chart-fill"/><path class="chart-line"/></svg></article>
+        <article class="card mode-card"><div class="card-label"><span data-icon="route"></span>出站模式</div><div class="segmented" id="mode-controls"><button data-mode="rule"><span data-icon="list"></span>规则</button><button data-mode="global"><span data-icon="globe"></span>全局</button><button data-mode="direct"><span data-icon="target"></span>直连</button></div></article>
+        <article class="card toggle-card"><div><div class="card-label">系统代理</div><small id="system-proxy-desc">GNOME 桌面代理</small></div><button class="switch" id="system-proxy" role="switch" aria-checked="false" aria-label="系统代理"></button></article>
+        <article class="card toggle-card"><div><div class="card-label">TUN 模式</div><small>虚拟网卡接管流量</small></div><button class="switch" id="tun" role="switch" aria-checked="false" aria-label="TUN 模式"></button></article>
+        <article class="card info-card"><div class="card-label"><span data-icon="plug"></span>代理端口<span class="tag">LOCAL</span></div><div class="port-value">127.0.0.1<span id="proxy-port">:—</span></div><div class="info-footer"><span>允许局域网连接</span><button class="switch small" id="allow-lan" role="switch" aria-checked="false" aria-label="允许局域网连接"></button></div></article>
+        <article class="card info-card profile-summary"><button class="card-link" data-page="profiles" aria-label="查看订阅配置"></button><div class="card-label"><span data-icon="file"></span>订阅配置<span data-icon="chevron"></span></div><h3 id="profile-name">—</h3><div class="profile-usage" id="profile-usage">未提供流量信息</div><div class="progress"><span id="profile-progress"></span></div></article>
+        <article class="card info-card"><div class="card-label"><span data-icon="network"></span>活跃连接</div><div class="big-stat"><strong id="connections-count">—</strong><span>个连接</span></div><button class="text-button" data-page="connections">查看网络活动<span data-icon="arrow"></span></button></article>
+        <article class="card info-card"><div class="card-label"><span data-icon="layers"></span>节点资源</div><div class="big-stat"><strong id="leaf-count">—</strong><span>个节点</span></div><div class="info-caption"><i class="tiny-dot"></i><span id="groups-count">— 个策略组</span><span id="memory-info"></span></div></article>
+        <article class="card connections-preview"><div class="card-heading"><h3><span data-icon="activity"></span>实时连接<span class="pill neutral" id="preview-count">0</span></h3><button class="text-button" data-page="connections">查看全部<span data-icon="arrow"></span></button></div><div class="table-wrap"><table><thead><tr><th>目标地址</th><th>出站节点</th><th class="numeric">下载</th><th class="numeric">上传</th></tr></thead><tbody id="preview-connections"><tr><td colspan="4" class="empty">正在读取连接…</td></tr></tbody></table></div></article>
+        <article class="card groups-preview"><div class="card-heading"><h3><span data-icon="layers"></span>代理组</h3><button class="icon-button" data-page="proxies" aria-label="查看代理节点"><span data-icon="arrow"></span></button></div><div id="preview-groups" class="group-list"></div></article>
+      </div>
+      <footer class="page-footer"><span><span data-icon="shield"></span>本机直连 · 数据来自现有 clashctl</span><span>FlClash inspired</span></footer>
+    </section>
+    <section id="proxies" class="page hidden"><div class="section-intro"><p>选择你的下一站。</p><div class="toolbar"><label class="search"><span data-icon="search"></span><input id="node-search" placeholder="搜索节点" aria-label="搜索节点"></label><button id="test-group" class="primary-button"><span data-icon="gauge"></span>组内测速</button></div></div><div class="group-tabs" id="group-tabs"></div><div class="proxy-toolbar"><span id="group-description"></span><label>排序 <select id="node-sort" aria-label="节点排序"><option value="default">默认顺序</option><option value="delay">延迟优先</option><option value="name">名称</option></select></label></div><div class="node-grid" id="node-grid"></div></section>
+    <section id="profiles" class="page hidden"><div class="section-intro"><p>管理订阅，保持配置更新。</p><button class="primary-button" id="add-profile"><span data-icon="plus"></span>添加订阅</button></div><div id="profile-list" class="profile-list"></div><div class="note"><span data-icon="info"></span>订阅沿用 clashctl 的配置。切换或更新当前订阅时，内核会重新加载。</div></section>
+    <section id="connections" class="page hidden"><div class="section-intro"><p id="connection-description">实时查看经过内核的网络连接。</p><label class="search"><span data-icon="search"></span><input id="connection-search" placeholder="搜索域名、进程或节点" aria-label="搜索连接"></label></div><article class="card full-table"><table><thead><tr><th>目标 / 进程</th><th>规则</th><th>出站节点</th><th class="numeric">下载 / 上传</th><th></th></tr></thead><tbody id="connection-list"></tbody></table></article></section>
+    <section id="rules" class="page hidden"><div class="section-intro"><p id="rule-description">按顺序匹配的路由规则。</p><label class="search"><span data-icon="search"></span><input id="rule-search" placeholder="搜索规则或策略组" aria-label="搜索规则"></label></div><article class="card full-table"><table><thead><tr><th>#</th><th>类型</th><th>匹配内容</th><th>目标策略</th></tr></thead><tbody id="rule-list"></tbody></table></article><div id="rule-more" class="note"></div></section>
+    <section id="logs" class="page hidden"><div class="section-intro"><p>内核的最新运行记录。</p><div class="toolbar"><label class="search"><span data-icon="search"></span><input id="log-search" placeholder="筛选日志" aria-label="筛选日志"></label><button class="secondary-button" id="pause-logs"><span data-icon="pause"></span>暂停滚动</button></div></div><article class="card log-card"><div class="log-header"><span><i class="tiny-dot"></i>MIHOMO LOG</span><span>最近 250 行</span></div><div id="log-lines" role="log" aria-live="off"></div></article></section>
+    <section id="settings" class="page hidden"><div class="section-intro"><p>让代理按你的习惯工作。</p></div><div class="settings-stack"><article class="card settings-card"><h3>连接设置</h3><div class="setting-row"><div><strong>IPv6</strong><p>允许内核处理 IPv6 流量</p></div><button id="ipv6" class="switch" role="switch" aria-checked="false" aria-label="IPv6"></button></div><div class="setting-row"><div><strong>日志级别</strong><p>控制内核运行日志的详细程度</p></div><select id="log-level" aria-label="日志级别"><option value="debug">调试</option><option value="info">信息</option><option value="warning">警告</option><option value="error">错误</option><option value="silent">静默</option></select></div><div class="setting-row"><div><strong>DNS 缓存</strong><p>清除内核缓存，下一次请求重新解析</p></div><button class="secondary-button" id="flush-dns">清除缓存</button></div></article><article class="card settings-card"><h3>关于控制台</h3><div class="setting-row"><div><strong>现有 clashctl 安装</strong><p id="install-directory">—</p></div><span class="pill neutral">本地连接</span></div><div class="setting-row"><div><strong>终端代理</strong><p>系统代理作用于遵循桌面设置的应用。已有终端请继续使用 clashctl on / off。</p></div></div><div class="setting-row"><div><strong>桌面窗口</strong><p>关闭窗口只关闭控制台，Mihomo 继续由 clashctl 管理。</p></div></div><div class="setting-row"><div><strong>界面设计</strong><p>参考 FlClash 的布局与交互，独立实现；项目不属于 FlClash。</p></div></div></article></div></section>
+  </main>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <dialog id="modal"><form id="modal-form"><div class="modal-heading"><h2 id="modal-title">添加订阅</h2><button type="button" class="icon-button" id="modal-close" aria-label="关闭"><span data-icon="close"></span></button></div><div id="modal-body"></div><div class="modal-actions"><button type="button" class="secondary-button" id="modal-cancel">取消</button><button type="submit" class="primary-button" id="modal-submit">确定</button></div></form></dialog>
+</body>
+</html>

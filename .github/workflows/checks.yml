@@ -1,0 +1,45 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check syntax
+        run: |
+          bash -n install.sh uninstall.sh launch.sh clashctl-bridge.sh
+          python3 -m compileall -q app.py backend.py install-desktop.py version.py scripts tests
+      - name: Fresh isolated installation
+        shell: bash
+        run: |
+          qa_home="$RUNNER_TEMP/clashctl-desktop-home"
+          mkdir -p "$qa_home"
+          export HOME="$qa_home" XDG_DATA_HOME="$qa_home/.local/share" XDG_CONFIG_HOME="$qa_home/.config"
+          bash install.sh --no-launch --service nohup > "$RUNNER_TEMP/install.log" 2>&1
+          "$HOME/.local/bin/clashctl-ui" --doctor
+          echo "CLASHCTL_TEST_HOME=$HOME/.clashctl" >> "$GITHUB_ENV"
+      - name: Run backend and installer tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Installed console smoke test
+        run: python3 tests/installed_smoke.py --home "$RUNNER_TEMP/clashctl-desktop-home"
+      - name: Stop isolated core
+        if: always()
+        shell: bash
+        run: |
+          export CLASHCTL_HOME="$RUNNER_TEMP/clashctl-desktop-home/.clashctl"
+          if [[ -f "$CLASHCTL_HOME/scripts/cmd/clashctl.sh" ]]; then
+            source "$CLASHCTL_HOME/scripts/cmd/clashctl.sh"
+            clashctl stop
+          fi
