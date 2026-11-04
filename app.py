@@ -7,7 +7,7 @@ import sys
 import threading
 from pathlib import Path
 
-from backend import LocalServer, ROOT
+from backend import LocalServer, ROOT, find_yq
 from version import VERSION
 
 
@@ -30,7 +30,8 @@ def desktop_libraries():
 def doctor():
     home = Path(os.environ.get('CLASHCTL_HOME', str(Path.home() / '.clashctl')))
     checks = {name: (home / name).is_file() for name in
-              ('bin/yq', 'bin/mihomo', 'scripts/cmd/clashctl.sh', 'data/runtime.yaml')}
+              ('bin/mihomo', 'scripts/cmd/clashctl.sh', 'data/runtime.yaml')}
+    checks['yq (本地或兼容的系统版本)'] = find_yq(home).is_file()
     print('Clashctl Desktop ' + VERSION)
     print('clashctl: ' + str(home))
     for name, exists in checks.items():

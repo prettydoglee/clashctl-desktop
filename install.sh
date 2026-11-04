@@ -91,7 +91,15 @@ fi
 command -v python3 >/dev/null || { printf '需要 Python 3.8 或更新版本。\n' >&2; exit 1; }
 python3 -c 'import sys; assert sys.version_info >= (3, 8), "需要 Python >= 3.8"'
 
-if [[ -x "$core_home/bin/mihomo" && -x "$core_home/bin/yq" && -f "$core_home/scripts/cmd/clashctl.sh" && -f "$core_home/data/runtime.yaml" ]]; then
+core_ready() {
+    [[ -x "$core_home/bin/mihomo" && -f "$core_home/scripts/cmd/clashctl.sh" && -f "$core_home/data/runtime.yaml" ]] || return 1
+    [[ ! -x "$core_home/bin/yq" ]] || return 0
+    command -v yq >/dev/null || return 1
+    case "$(yq --version 2>&1)" in *mikefarah*v4.*) return 0 ;; esac
+    return 1
+}
+
+if core_ready; then
     printf '复用已有 clashctl：%s\n' "$core_home"
 elif [[ "$skip_core" == true ]]; then
     printf '指定目录内没有完整的 clashctl / Mihomo 安装：%s\n' "$core_home" >&2; exit 1
@@ -120,7 +128,7 @@ PY
     CI=1 CLASHCTL_DOWNLOAD_TIMEOUT=180 bash "$core_source/install.sh" --local --home "$core_home" --service "$core_service" "--gh-proxy=$download_proxy"
 fi
 
-if [[ ! -f "$core_home/data/runtime.yaml" ]]; then
+if ! core_ready; then
     printf 'clashctl 运行配置尚未生成。若同用户正在运行另一个目录的 TUN 内核，请复用原安装目录或先停止旧实例后重试。\n' >&2
     exit 1
 fi

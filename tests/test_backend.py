@@ -11,7 +11,19 @@ import unittest
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from backend import Bridge, LocalServer, UIError, atomic_write
+from backend import Bridge, LocalServer, UIError, atomic_write, find_yq
+
+
+class ParserDiscoveryTests(unittest.TestCase):
+    def test_reuses_system_mikefarah_yq_v4(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch('backend.shutil.which', return_value='/usr/local/bin/yq'), patch('backend.run', return_value='yq (https://github.com/mikefarah/yq/) version v4.50.1'):
+                self.assertEqual(find_yq(Path(directory)), Path('/usr/local/bin/yq'))
+
+    def test_rejects_incompatible_python_yq(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch('backend.shutil.which', return_value='/usr/bin/yq'), patch('backend.run', return_value='yq 3.4.3'):
+                self.assertEqual(find_yq(Path(directory)), Path(directory) / 'bin/yq')
 
 
 class HTTPAccessTests(unittest.TestCase):
@@ -77,7 +89,8 @@ class ConfigurationTests(unittest.TestCase):
     """Use the installed parser, merge logic, and kernel validator in an isolated home."""
     def setUp(self):
         installed = Path(os.environ.get('CLASHCTL_TEST_HOME', str(Path.home() / '.clashctl')))
-        if not (installed / 'bin/yq').exists():
+        parser = find_yq(installed)
+        if not parser.exists() or not (installed / 'bin/mihomo').exists():
             self.skipTest('Requires the local clashctl installation')
         self.temp = tempfile.TemporaryDirectory()
         self.home = Path(self.temp.name)
@@ -85,8 +98,8 @@ class ConfigurationTests(unittest.TestCase):
         (self.home / 'bin').mkdir()
         (self.home / 'resources').mkdir()
         (self.home / 'scripts').symlink_to(installed / 'scripts')
-        for name in ('yq', 'mihomo'):
-            (self.home / 'bin' / name).symlink_to(installed / 'bin' / name)
+        (self.home / 'bin/yq').symlink_to(parser)
+        (self.home / 'bin/mihomo').symlink_to(installed / 'bin/mihomo')
         (self.home / '.clashctl-format').write_text('1\n')
         (self.home / '.env').write_text('CLASHCTL_KERNEL=mihomo\n')
         self.base = ('mixed-port: 17899\nexternal-controller: 127.0.0.1:0\n'

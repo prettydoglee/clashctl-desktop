@@ -88,8 +88,8 @@ def main(home):
         print('First subscription import and automatic activation: OK', flush=True)
         action({'action': 'settings', 'patch': {'mode': 'direct'}})
         assert get('/api/state')['config']['mode'] == 'direct'
-        persisted = subprocess.check_output([str(home / '.clashctl/bin/yq'), '.mode',
-                                            str(home / '.clashctl/data/mixin.yaml')], text=True).strip()
+        persisted = subprocess.check_output(['bash', '-c',
+            'source "$CLASHCTL_HOME/scripts/cmd/clashctl.sh"; "$BIN_YQ" .mode "$CLASH_CONFIG_MIXIN"'], env=env, text=True).strip()
         assert persisted == 'direct'
         print('Real controller settings and persistence: OK', flush=True)
     finally:

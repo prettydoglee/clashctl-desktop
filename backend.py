@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -48,10 +49,26 @@ def atomic_write(path, data):
             os.unlink(name)
 
 
+def find_yq(home):
+    """clashctl may reuse a compatible system yq instead of downloading bin/yq."""
+    local = Path(home) / 'bin/yq'
+    if local.is_file() and os.access(str(local), os.X_OK):
+        return local
+    candidate = shutil.which('yq')
+    if candidate:
+        try:
+            version = run([candidate, '--version'], timeout=5)
+            if 'mikefarah' in version and re.search(r'v4\.', version):
+                return Path(candidate)
+        except (UIError, OSError):
+            pass
+    return local
+
+
 class Bridge:
     def __init__(self, home=None):
         self.home = Path(home or os.environ.get('CLASHCTL_HOME', str(Path.home() / '.clashctl')))
-        self.yq = self.home / 'bin/yq'
+        self.yq = find_yq(self.home)
         self.runtime = self.home / 'data/runtime.yaml'
         self.mixin = self.home / 'data/mixin.yaml'
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
